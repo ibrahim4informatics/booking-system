@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  confirmed
+  canceled
+  pending
+}
+
+enum Mediatype {
+  image
+  video
+}
+
+model User {
+  id           String    @id @default(uuid())
+  code         String
+  family_name  String    @db.VarChar(35)
+  last_name    String    @db.VarChar(35)
+  age          Int
+  phone_number String    @unique @db.VarChar(12)
+  email        String    @unique
+  password     String
+  otp          Int?
+  payments     Payment[]
+  orders       Order[]
+  createdAt    DateTime  @default(now())
+}
+
+model Admin {
+  id           String @id @default(uuid())
+  code         String
+  family_name  String @db.VarChar(35)
+  last_name    String @db.VarChar(35)
+  age          Int
+  phone_number String @unique @db.VarChar(12)
+  email        String @unique
+  password     String
+  createdAt DateTime @default(now())
+}
+
+model Offer {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(160)
+  description String   @db.LongText
+  media       Media[]
+  orders      Order[]
+  isAvailable   Boolean  @default(true)
+  price       Decimal
+  expiresIn   DateTime
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+model Order {
+  id       Int         @id @default(autoincrement())
+  user     User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  offer    Offer       @relation(fields: [offer_id], references: [id], onDelete: Cascade)
+  status   OrderStatus @default(pending)
+  payment  Payment?
+  offer_id Int
+  user_id  String
+}
+
+model Payment {
+  id       String  @id @default(uuid())
+  user     User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  order    Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  ammount  Decimal
+  user_id  String
+  order_id Int     @unique
+}
+
+model Media {
+  id          Int       @id @default(autoincrement())
+  bucket_url  String
+  display_url String
+  type        Mediatype
+  offer       Offer     @relation(fields: [offer_id], references: [id], onDelete: Cascade)
+  offer_id    Int
+  createdAt   DateTime  @default(now())
+}
