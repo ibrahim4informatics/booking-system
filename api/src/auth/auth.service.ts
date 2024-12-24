@@ -1,10 +1,11 @@
-import { Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import LoginDto from "./dto/login.dto";
 import PrismaService from "src/prisma/prisma.service";
 import ArgonService from "src/argon/argon,service";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
 import { Response } from "express";
 import { Admin, User } from "@prisma/client";
+import RegisterDto from "./dto/register.dto";
 
 @Injectable()
 export default class AuthService {
@@ -15,14 +16,19 @@ export default class AuthService {
         private readonly jwtService: JwtService
     ) { }
 
+    userCodeGenerator(phone: string, email: string) {
+        const [username, emailProvider] = email.split('@');
+        return `${username}-${phone}`;
 
-    async generateToken(payload: {}, secret: string, options?:JwtSignOptions): Promise<string | null> {
+    }
+
+    async generateToken(payload: {}, secret: string, options?: JwtSignOptions): Promise<string | null> {
         try {
             const token = await this.jwtService.signAsync(payload, { secret });
             return token;
         }
 
-        catch (err){
+        catch (err) {
             console.log(`error is ${err}`);
             return null;
         }
@@ -30,10 +36,10 @@ export default class AuthService {
 
     async loginUser(loginUserDto: LoginDto, userType: 'client' | 'admin', res: Response) {
         const { email, password } = loginUserDto;
-    
-        let user:User | Admin;
-        let role:string;
-    
+
+        let user: User | Admin;
+        let role: string;
+
         if (userType === 'admin') {
             user = await this.prismaService.admin.findUnique({ where: { email } });
             role = 'admin';
@@ -41,31 +47,81 @@ export default class AuthService {
             user = await this.prismaService.user.findUnique({ where: { email } });
             role = 'client';
         }
-    
+
         if (!user) {
             throw new UnauthorizedException("invalid email or password");
         }
-    
+
         if (!(this.argonService.compare(user.password, password))) {
             throw new UnauthorizedException("invalid email or password");
         }
-    
+
         const accessToken = this.generateToken({ uid: user.id, role }, process.env.ACCESS_SECRET, { expiresIn: "15m" });
         const refreshToken = this.generateToken({ uid: user.id, role }, process.env.REFRESH_SECRET, { expiresIn: "7d" });
-    
+
         if (!accessToken || !refreshToken) {
             throw new InternalServerErrorException("Error while trying to login user");
         }
-    
+
         res.cookie('access', accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
         res.cookie('refresh', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    
+
         return {
             msg: "user login success"
         };
     }
 
 
-    registerUser(){}
+    async registerUser(registerUserDto: RegisterDto, userType: 'admin' | 'client') {
+        let user: Admin | User | null = null;
+        const { email, password, family_name, last_name, age, phone_number } = registerUserDto
+
+        if (userType === 'admin') {
+            user = await this.prismaService.admin.findUnique({ where: { email } });
+        }
+        else {
+            user = await this.prismaService.user.findUnique({ where: { email } });
+        }
+
+        if (user) throw new BadRequestException("the email is used by another account");
+        if (userType === 'admin') {
+            try {
+                await this.prismaService.admin.create({
+                    data: {
+                        email, family_name, last_name, age, phone_number,
+                        password: await this.argonService.hashValue(password),
+                        code: this.userCodeGenerator(phone_number, email)
+                    }
+                });
+            }
+            catch (err) {
+                console.log(`error is ${new Error(err)}`);
+                throw new InternalServerErrorException("Can not register user now!")
+            }
+        }
+
+
+        else {
+
+            try {
+                await this.prismaService.user.create({
+                    data: {
+                        email, family_name, last_name, age, phone_number,
+                        password: await this.argonService.hashValue(password),
+                        code: this.userCodeGenerator(phone_number, email)
+                    }
+                });
+            }
+            catch (err) {
+                console.log(`error is ${new Error(err)}`);
+                throw new InternalServerErrorException("Can not register user now!")
+            }
+
+        }
+
+        return {
+            msg:"user creation success"
+        }
+    }
 
 }

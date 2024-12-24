@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Post, Res } from "@nestjs/commo
 import LoginDto from "./dto/login.dto";
 import { Response } from "express";
 import AuthService from "./auth.service";
+import RegisterDto from "./dto/register.dto";
 
 @Controller("auth/admin")
 export  class AdminAuthController {
@@ -29,9 +30,14 @@ export class ClientAuthController {
         private readonly authService:AuthService
     ){}
 
-    @Post()
+    @Post('login')
     @HttpCode(HttpStatus.OK)
     loginUser(@Body() loginUserDto:LoginDto, @Res() res:Response){
         return this.authService.loginUser(loginUserDto,'client', res);
+    }
+
+    @Post('register')
+    registerUser(@Body() registerDto:RegisterDto, @Res() res:Response){
+        return this.authService.registerUser(registerDto,'admin');
     }
 }
