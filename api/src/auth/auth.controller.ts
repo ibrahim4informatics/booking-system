@@ -3,6 +3,7 @@ import LoginDto from "./dto/login.dto";
 import { Response } from "express";
 import AuthService from "./auth.service";
 import RegisterDto from "./dto/register.dto";
+import ForgotPasswordDto from "./dto/forgot.dto";
 
 @Controller("auth/admin")
 export class AdminAuthController {
@@ -22,6 +23,11 @@ export class AdminAuthController {
     @Post("register")
     registerClient(@Body() registerDto: RegisterDto) {
         return this.authService.registerUser(registerDto, 'admin');
+    }
+
+    @Post("forgot/send")
+    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto){
+        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin');
     }
 
 
@@ -45,5 +51,10 @@ export class ClientAuthController {
 
     registerUser(@Body() registerDto: RegisterDto) {
         return this.authService.registerUser(registerDto, 'client');
+    }
+
+    @Post("forgot/send")
+    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto){
+        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client');
     }
 }

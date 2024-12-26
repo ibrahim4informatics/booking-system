@@ -6,6 +6,7 @@ import { JwtService, JwtSignOptions } from "@nestjs/jwt";
 import { Response } from "express";
 import { Admin, User } from "@prisma/client";
 import RegisterDto from "./dto/register.dto";
+import ForgotPasswordDto from "./dto/forgot.dto";
 
 @Injectable()
 export default class AuthService {
@@ -21,7 +22,6 @@ export default class AuthService {
         return `${username}-${phone}`;
 
     }
-
     async generateToken(payload: {}, secret: string, options?: JwtSignOptions): Promise<string | null> {
         try {
             const token = await this.jwtService.signAsync(payload, { secret });
@@ -33,7 +33,6 @@ export default class AuthService {
             return null;
         }
     }
-
     async loginUser(loginUserDto: LoginDto, userType: 'client' | 'admin', res: Response) {
         const { email, password } = loginUserDto;
 
@@ -57,7 +56,7 @@ export default class AuthService {
         }
 
         const accessToken = await this.generateToken({ uid: user.id, role }, userType === 'admin' ? process.env.AATS : process.env.CATS, { expiresIn: "15m" });
-        const refreshToken = await this.generateToken({ uid: user.id, role },userType === 'admin' ? process.env.ARTS : process.env.CRTS, { expiresIn: "7d" });
+        const refreshToken = await this.generateToken({ uid: user.id, role }, userType === 'admin' ? process.env.ARTS : process.env.CRTS, { expiresIn: "7d" });
 
         if (!accessToken || !refreshToken) {
             throw new InternalServerErrorException("Error while trying to login user");
@@ -69,15 +68,13 @@ export default class AuthService {
         return {
             msg: "user login success"
         };
-    }  
-
-
+    }
     async registerUser(registerUserDto: RegisterDto, userType: 'admin' | 'client') {
-        
+
         const { email, password, family_name, last_name, age, phone_number } = registerUserDto
 
-        const admin = await this.prismaService.admin.findUnique({where:{email}});
-        const client = await this.prismaService.user.findUnique({where:{email}});
+        const admin = await this.prismaService.admin.findUnique({ where: { email } });
+        const client = await this.prismaService.user.findUnique({ where: { email } });
 
         if (client || admin) throw new BadRequestException("the email is used by another account");
         if (userType === 'admin') {
@@ -118,6 +115,45 @@ export default class AuthService {
         return {
             msg: "user creation success"
         }
+    }
+
+
+    //todo: forgot password
+    async sendForgotPasswordOtp(
+        forgotPasswordDto: ForgotPasswordDto, userType: 'admin' | 'client'
+    ) {
+
+        let user: User | Admin | null = null;
+        const { email } = forgotPasswordDto;
+
+        if (userType === 'admin') {
+            user = await this.prismaService.admin.findUnique({ where: { email } });
+        }
+        else {
+            user = await this.prismaService.admin.findUnique({ where: { email } });
+        }
+
+        if (!user) throw new BadRequestException("email is not valid");
+        const otp: number = Math.ceil(Math.random() * 1000000);
+        console.log(otp);
+
+        if (userType === 'admin') {
+            await this.prismaService.admin.update({ where: { email }, data: { otp } });
+        }
+        else {
+            await this.prismaService.user.update({ where: { email }, data: { otp } });
+        }
+
+        return {
+            msg: "verification code sent to your email!",
+            otp
+        }
+
+
+
+
+
+
     }
 
 }

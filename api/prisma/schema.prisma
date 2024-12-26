@@ -40,15 +40,16 @@ model User {
 }
 
 model Admin {
-  id           String @id @default(uuid())
+  id           String   @id @default(uuid())
   code         String
-  family_name  String @db.VarChar(35)
-  last_name    String @db.VarChar(35)
+  family_name  String   @db.VarChar(35)
+  last_name    String   @db.VarChar(35)
   age          Int
-  phone_number String @unique @db.VarChar(12)
-  email        String @unique
+  phone_number String   @unique @db.VarChar(12)
+  otp          Int?
+  email        String   @unique
   password     String
-  createdAt DateTime @default(now())
+  createdAt    DateTime @default(now())
 }
 
 model Offer {
@@ -57,7 +58,7 @@ model Offer {
   description String   @db.LongText
   media       Media[]
   orders      Order[]
-  isAvailable   Boolean  @default(true)
+  isAvailable Boolean  @default(true)
   price       Decimal
   expiresIn   DateTime
   updatedAt   DateTime @updatedAt
