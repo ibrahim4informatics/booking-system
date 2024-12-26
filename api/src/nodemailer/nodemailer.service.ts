@@ -8,9 +8,10 @@ export default class NodemailerService {
     private readonly transport = nodemailer.createTransport({
         host: "smtp.gmail.com",
         service: "gmail",
+        secure:true,
         port: 465,
         auth: {
-            user: process.env.USER,
+            user: process.env.EMAIL,
             pass: process.env.PASS
         }
     });
