@@ -56,8 +56,8 @@ export default class AuthService {
             throw new UnauthorizedException("invalid email or password");
         }
 
-        const accessToken = this.generateToken({ uid: user.id, role }, process.env.ACCESS_SECRET, { expiresIn: "15m" });
-        const refreshToken = this.generateToken({ uid: user.id, role }, process.env.REFRESH_SECRET, { expiresIn: "7d" });
+        const accessToken = await this.generateToken({ uid: user.id, role }, userType === 'admin' ? process.env.AATS : process.env.CATS, { expiresIn: "15m" });
+        const refreshToken = await this.generateToken({ uid: user.id, role },userType === 'admin' ? process.env.ARTS : process.env.CRTS, { expiresIn: "7d" });
 
         if (!accessToken || !refreshToken) {
             throw new InternalServerErrorException("Error while trying to login user");
@@ -69,21 +69,17 @@ export default class AuthService {
         return {
             msg: "user login success"
         };
-    }
+    }  
 
 
     async registerUser(registerUserDto: RegisterDto, userType: 'admin' | 'client') {
-        let user: Admin | User | null = null;
+        
         const { email, password, family_name, last_name, age, phone_number } = registerUserDto
 
-        if (userType === 'admin') {
-            user = await this.prismaService.admin.findUnique({ where: { email } });
-        }
-        else {
-            user = await this.prismaService.user.findUnique({ where: { email } });
-        }
+        const admin = await this.prismaService.admin.findUnique({where:{email}});
+        const client = await this.prismaService.user.findUnique({where:{email}});
 
-        if (user) throw new BadRequestException("the email is used by another account");
+        if (client || admin) throw new BadRequestException("the email is used by another account");
         if (userType === 'admin') {
             try {
                 await this.prismaService.admin.create({
@@ -120,7 +116,7 @@ export default class AuthService {
         }
 
         return {
-            msg:"user creation success"
+            msg: "user creation success"
         }
     }
 

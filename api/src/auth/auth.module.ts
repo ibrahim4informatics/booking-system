@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import  { AdminAuthController, ClientAuthController } from "./auth.controller";
 import AuthService from "./auth.service";
-import ArgonService from "src/argon/argon,service";
+import ArgonModule from "src/argon/argon.module";
 
 @Module({
-    imports:[ArgonService],
+    imports:[ArgonModule],
     controllers:[AdminAuthController, ClientAuthController],
     providers:[AuthService]
 })

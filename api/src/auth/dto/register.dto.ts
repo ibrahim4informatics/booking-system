@@ -17,7 +17,6 @@ export   default class RegisterDto {
     @IsInt()
     @IsPositive()
     age: number
-
     @IsNotEmpty()
     @IsString()
     @MaxLength(12)

@@ -4,12 +4,12 @@ import * as ag from "argon2";
 export default class ArgonService {
 
     async hashValue(value: string): Promise<string> {
-        const hash = await ag.hash(value, { hashLength: 32 })
+        const hash = await ag.hash(value)
         return hash;
     }
 
     async compare(hash: string, value: string): Promise<boolean> {
 
-        return await ag.verify(value, hash);
+        return await ag.verify(hash,value);
     }
 }
