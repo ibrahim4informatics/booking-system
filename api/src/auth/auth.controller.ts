@@ -26,8 +26,9 @@ export class AdminAuthController {
     }
 
     @Post("forgot/send")
-    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto){
-        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin');
+    @HttpCode(HttpStatus.OK)
+    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
+        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin',res);
     }
 
 
@@ -54,7 +55,8 @@ export class ClientAuthController {
     }
 
     @Post("forgot/send")
-    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto){
-        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client');
+    @HttpCode(HttpStatus.OK)
+    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
+        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client', res);
     }
 }

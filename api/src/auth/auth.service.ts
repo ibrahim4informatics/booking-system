@@ -208,6 +208,21 @@ export default class AuthService {
             return null;
         }
     }
+
+    async verifyToken(token:string, secret:string):Promise<{email:string} | false > {
+    
+        try {
+
+            const payload = await this.jwtService.verifyAsync(token,{secret});
+            return payload as {email:string};
+
+        }
+        catch(err){
+            console.log(`Error while verifying token: ${new Error(err)}`)
+            return false;
+
+        }
+    }
     async loginUser(loginUserDto: LoginDto, userType: 'client' | 'admin', res: Response) {
         const { email, password } = loginUserDto;
 
@@ -295,7 +310,7 @@ export default class AuthService {
 
     //todo: forgot password
     async sendForgotPasswordOtp(
-        forgotPasswordDto: ForgotPasswordDto, userType: 'admin' | 'client'
+        forgotPasswordDto: ForgotPasswordDto, userType: 'admin' | 'client',res:Response
     ) {
 
         let user: User | Admin | null = null;
@@ -324,14 +339,16 @@ export default class AuthService {
         })
 
         if (!emailSent) throw new InternalServerErrorException("can not send verification email!");
+        const token = this.generateToken({email}, process.env.FPOTS, {expiresIn:'15m'});
+        res.cookie("forgot", token,{httpOnly:true, sameSite:"strict", secure:process.env.MODE === 'production', maxAge: 1000 * 3600 * 15});
         return {
             msg: "verification code sent to your email!",
         }
 
+    }
 
-
-
-
+    checkForgotPasswordOtp(checkForgotPasswordOtpDto, req:Request){
+        
 
     }
 
