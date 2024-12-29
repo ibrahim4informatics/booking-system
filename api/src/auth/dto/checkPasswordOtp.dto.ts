@@ -5,8 +5,4 @@ export default class CheckForgotPasswordOtpDto {
     @IsNumber()
     @Max(999999)
     otp:number
-    @IsNotEmpty()
-    @IsString()
-    @IsEmail()
-    email:string
 }

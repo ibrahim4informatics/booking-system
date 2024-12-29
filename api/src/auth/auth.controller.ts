@@ -1,6 +1,6 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Redirect, Res } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Redirect, Req, Res } from "@nestjs/common";
 import LoginDto from "./dto/login.dto";
-import { Response } from "express";
+import { Request, Response } from "express";
 import AuthService from "./auth.service";
 import RegisterDto from "./dto/register.dto";
 import ForgotPasswordDto from "./dto/forgot.dto";
@@ -32,6 +32,12 @@ export class AdminAuthController {
     }
 
 
+    @Get("forgot")
+    verifyForgotPassword(@Req() req:Request){
+        return this.authService.checkForgotPasswordOtp(req);
+    }
+
+
 }
 
 
@@ -58,5 +64,10 @@ export class ClientAuthController {
     @HttpCode(HttpStatus.OK)
     sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
         return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client', res);
+    }
+
+    @Get("forgot")
+    verifyForgotPassword(@Req() req:Request){
+        return this.authService.checkForgotPasswordOtp(req);
     }
 }

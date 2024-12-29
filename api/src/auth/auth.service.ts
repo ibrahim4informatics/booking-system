@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import LoginDto from "./dto/login.dto";
 import PrismaService from "src/prisma/prisma.service";
 import ArgonService from "src/argon/argon,service";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
-import { Response } from "express";
+import { Response, Request } from "express";
 import { Admin, User } from "@prisma/client";
 import RegisterDto from "./dto/register.dto";
 import ForgotPasswordDto from "./dto/forgot.dto";
@@ -209,15 +209,15 @@ export default class AuthService {
         }
     }
 
-    async verifyToken(token:string, secret:string):Promise<{email:string} | false > {
-    
+    async verifyToken(token: string, secret: string): Promise<{ email: string } | false> {
+
         try {
 
-            const payload = await this.jwtService.verifyAsync(token,{secret});
-            return payload as {email:string};
+            const payload = await this.jwtService.verifyAsync(token, { secret });
+            return payload as { email: string };
 
         }
-        catch(err){
+        catch (err) {
             console.log(`Error while verifying token: ${new Error(err)}`)
             return false;
 
@@ -310,7 +310,7 @@ export default class AuthService {
 
     //todo: forgot password
     async sendForgotPasswordOtp(
-        forgotPasswordDto: ForgotPasswordDto, userType: 'admin' | 'client',res:Response
+        forgotPasswordDto: ForgotPasswordDto, userType: 'admin' | 'client', res: Response
     ) {
 
         let user: User | Admin | null = null;
@@ -339,16 +339,21 @@ export default class AuthService {
         })
 
         if (!emailSent) throw new InternalServerErrorException("can not send verification email!");
-        const token = this.generateToken({email}, process.env.FPOTS, {expiresIn:'15m'});
-        res.cookie("forgot", token,{httpOnly:true, sameSite:"strict", secure:process.env.MODE === 'production', maxAge: 1000 * 3600 * 15});
+        const token = this.generateToken({ email }, process.env.FPOTS, { expiresIn: '15m' });
+        res.cookie("forgot", token, { httpOnly: true, sameSite: "strict", secure: process.env.MODE === 'production', maxAge: 1000 * 3600 * 15 });
         return {
             msg: "verification code sent to your email!",
         }
 
     }
 
-    checkForgotPasswordOtp(checkForgotPasswordOtpDto, req:Request){
-        
+    async checkForgotPasswordOtp(req: Request) {
+        const { forgot } = req.cookies
+
+        if (!forgot) throw new ForbiddenException("invalid reset password request");
+        const verifyToken = await this.verifyToken(forgot, process.env.FPOTS);
+        if (!verifyToken) throw new ForbiddenException("invalid reset password request");
+        return {msg:"reset password valid"};
 
     }
 
