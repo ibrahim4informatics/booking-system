@@ -242,7 +242,7 @@ export default class AuthService {
             throw new UnauthorizedException("invalid email or password");
         }
 
-        if (!(this.argonService.compare(user.password, password))) {
+        if (!(await this.argonService.compare(user.password, password))) {
             throw new UnauthorizedException("invalid email or password");
         }
 
@@ -369,10 +369,10 @@ export default class AuthService {
         if (!payload) throw new ForbiddenException("invalid request for resetting password");
         if (payload.email !== email) {
             if (userType === 'admin') {
-                await this.prismaService.admin.update({ where: { email }, data: { otp: null } });
+                await this.prismaService.admin.update({ where: { email: payload.email }, data: { otp: null } });
             }
             else {
-                await this.prismaService.user.update({ where: { email }, data: { otp: null } });
+                await this.prismaService.user.update({ where: { email:payload.email }, data: { otp: null } });
             }
             throw new ForbiddenException("reset request missmatch send another verification code!");
         }
@@ -384,6 +384,7 @@ export default class AuthService {
         else {
             user = await this.prismaService.user.findUnique({ where: { email } });
         }
+
 
         if (!user) throw new UnauthorizedException("invalid informations");
 

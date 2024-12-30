@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import AuthService from "./auth.service";
 import RegisterDto from "./dto/register.dto";
 import ForgotPasswordDto from "./dto/forgot.dto";
+import UpdateForgotPasswordOtpDto from "./dto/updatePasswordOtp.dto";
 
 @Controller("auth/admin")
 export class AdminAuthController {
@@ -16,7 +17,7 @@ export class AdminAuthController {
 
     @Post("login")
     @HttpCode(HttpStatus.OK)
-    loginUser(@Body() loginUserDto: LoginDto, @Res({passthrough:true}) res: Response) {
+    loginUser(@Body() loginUserDto: LoginDto, @Res({ passthrough: true }) res: Response) {
         return this.authService.loginUser(loginUserDto, 'admin', res);
     }
 
@@ -27,15 +28,20 @@ export class AdminAuthController {
 
     @Post("forgot")
     @HttpCode(HttpStatus.OK)
-    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
-        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin',res);
+    sendForgotOtp(@Body() forgotPasswordDto: ForgotPasswordDto, @Res({ passthrough: true }) res: Response) {
+        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin', res);
     }
-
 
     @Get("forgot")
-    verifyForgotPassword(@Req() req:Request){
+    verifyForgotPassword(@Req() req: Request) {
         return this.authService.checkForgotPasswordOtp(req);
     }
+
+    @Patch("forgot")
+    resetPassword(@Body() updateForgotPasswordOtpDto: UpdateForgotPasswordOtpDto, @Req() req: Request) {
+        return this.authService.updatePassword(updateForgotPasswordOtpDto, req, 'admin');
+    }
+
 
 
 }
@@ -50,7 +56,7 @@ export class ClientAuthController {
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    loginUser(@Body() loginUserDto: LoginDto, @Res({passthrough:true}) res: Response) {
+    loginUser(@Body() loginUserDto: LoginDto, @Res({ passthrough: true }) res: Response) {
         return this.authService.loginUser(loginUserDto, 'client', res);
     }
 
@@ -63,17 +69,19 @@ export class ClientAuthController {
     //? send verification code to user email
     @Post("forgot")
     @HttpCode(HttpStatus.OK)
-    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
+    sendForgotOtp(@Body() forgotPasswordDto: ForgotPasswordDto, @Res({ passthrough: true }) res: Response) {
         return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client', res);
     }
 
     //? cehck the frogot request validity
     @Get("forgot")
-    verifyForgotPassword(@Req() req:Request){
+    verifyForgotPassword(@Req() req: Request) {
         return this.authService.checkForgotPasswordOtp(req);
     }
 
     //? change password for valid forgot request
     @Patch("forgot")
-    resetPassword(){}
+    resetPassword(@Body() updateForgotPasswordOtpDto: UpdateForgotPasswordOtpDto, @Req() req: Request) {
+        return this.authService.updatePassword(updateForgotPasswordOtpDto, req, 'client')
+    }
 }
