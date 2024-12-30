@@ -8,6 +8,7 @@ import { Admin, User } from "@prisma/client";
 import RegisterDto from "./dto/register.dto";
 import ForgotPasswordDto from "./dto/forgot.dto";
 import NodemailerService from "src/nodemailer/nodemailer.service";
+import UpdateForgotPasswordOtpDto from "./dto/updatePasswordOtp.dto";
 
 @Injectable()
 export default class AuthService {
@@ -315,13 +316,15 @@ export default class AuthService {
 
         let user: User | Admin | null = null;
         const { email } = forgotPasswordDto;
+        console.log(userType)
 
         if (userType === 'admin') {
             user = await this.prismaService.admin.findUnique({ where: { email } });
         }
         else {
-            user = await this.prismaService.admin.findUnique({ where: { email } });
+            user = await this.prismaService.user.findUnique({ where: { email } });
         }
+
         if (!user) throw new BadRequestException("email is not valid");
         const otp: number = Math.ceil(Math.random() * 1000000);
         if (userType === 'admin') {
@@ -339,7 +342,7 @@ export default class AuthService {
         })
 
         if (!emailSent) throw new InternalServerErrorException("can not send verification email!");
-        const token = this.generateToken({ email }, process.env.FPOTS, { expiresIn: '15m' });
+        const token = await this.generateToken({ email }, process.env.FPOTS, { expiresIn: '15m' });
         res.cookie("forgot", token, { httpOnly: true, sameSite: "strict", secure: process.env.MODE === 'production', maxAge: 1000 * 3600 * 15 });
         return {
             msg: "verification code sent to your email!",
@@ -353,8 +356,47 @@ export default class AuthService {
         if (!forgot) throw new ForbiddenException("invalid reset password request");
         const verifyToken = await this.verifyToken(forgot, process.env.FPOTS);
         if (!verifyToken) throw new ForbiddenException("invalid reset password request");
-        return {msg:"reset password valid"};
+        return { msg: "reset password valid" };
 
     }
 
+    async updatePassword(updatePasswordDto: UpdateForgotPasswordOtpDto, req: Request, userType: 'admin' | 'client') {
+        const { forgot } = req.cookies;
+        const { otp, email, newPassword } = updatePasswordDto
+
+        if (!forgot) throw new ForbiddenException("invalid request");
+        const payload = await this.verifyToken(forgot, process.env.FPOTS);
+        if (!payload) throw new ForbiddenException("invalid request for resetting password");
+        if (payload.email !== email) {
+            if (userType === 'admin') {
+                await this.prismaService.admin.update({ where: { email }, data: { otp: null } });
+            }
+            else {
+                await this.prismaService.user.update({ where: { email }, data: { otp: null } });
+            }
+            throw new ForbiddenException("reset request missmatch send another verification code!");
+        }
+
+        let user: User | Admin | null;
+        if (userType === 'admin') {
+            user = await this.prismaService.admin.findUnique({ where: { email } });
+        }
+        else {
+            user = await this.prismaService.user.findUnique({ where: { email } });
+        }
+
+        if (!user) throw new UnauthorizedException("invalid informations");
+
+        if (user.otp !== otp) throw new ForbiddenException("incorrect or expired erification code");
+
+        if (userType === 'admin') {
+            await this.prismaService.admin.update({ where: { email }, data: { otp: null, password: await this.argonService.hashValue(newPassword) } })
+        }
+        else {
+            await this.prismaService.user.update({ where: { email }, data: { otp: null, password: await this.argonService.hashValue(newPassword) } })
+        }
+        return {
+            msg: "password reset success!"
+        }
+    }
 }

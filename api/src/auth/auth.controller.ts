@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Redirect, Req, Res } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, Res } from "@nestjs/common";
 import LoginDto from "./dto/login.dto";
 import { Request, Response } from "express";
 import AuthService from "./auth.service";
@@ -25,7 +25,7 @@ export class AdminAuthController {
         return this.authService.registerUser(registerDto, 'admin');
     }
 
-    @Post("forgot/send")
+    @Post("forgot")
     @HttpCode(HttpStatus.OK)
     sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
         return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin',res);
@@ -60,14 +60,20 @@ export class ClientAuthController {
         return this.authService.registerUser(registerDto, 'client');
     }
 
-    @Post("forgot/send")
+    //? send verification code to user email
+    @Post("forgot")
     @HttpCode(HttpStatus.OK)
     sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
         return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client', res);
     }
 
+    //? cehck the frogot request validity
     @Get("forgot")
     verifyForgotPassword(@Req() req:Request){
         return this.authService.checkForgotPasswordOtp(req);
     }
+
+    //? change password for valid forgot request
+    @Patch("forgot")
+    resetPassword(){}
 }
