@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Box, Heading, Input, Link, Text } from "@chakra-ui/react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import React from "react";
@@ -26,7 +27,7 @@ const LoginForm: React.FC = () => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.log("Data submitted successfully!");
-                resolve();
+                resolve(null);
             }, 2000); // Simulates a 2-second delay
         });
 
@@ -38,11 +39,11 @@ const LoginForm: React.FC = () => {
             <Text fontSize={"13px"} color={'GrayText'} ml={1}>Login to your account!</Text>
 
             <Field invalid={errors.email?.message ? true : false} errorText={errors.email?.message} label="Email" color={"blue"} my={4}>
-                <Input color={'black'} variant={'flushed'} _focus={{ borderColor: "rgba(66, 153, 225, 0.6)" }} size={'lg'} placeholder="johnsmith@gmail.com" {...register("email")} />
+                <Input color={'black'} variant={'flushed'} colorPalette={"blue"} size={'lg'} placeholder="johnsmith@gmail.com" {...register("email")} />
             </Field>
 
             <Field invalid={errors.password?.message ? true : false} errorText={errors.password?.message} label="Password" color={"blue"} mt={4} mb={1}>
-                <Input color={'black'} variant={'flushed'} _focus={{ borderColor: "rgba(66, 153, 225, 0.6)" }} size={'lg'} type="password" {...register("password")} />
+                <PasswordInput color={'black'} variant={'flushed'} colorPalette={"blue"} size={'lg'} type="password" {...register("password")} />
             </Field>
 
             <Link href="/forgot" color={'blue'} ml={1} mb={2}>forgot pasword?</Link>
