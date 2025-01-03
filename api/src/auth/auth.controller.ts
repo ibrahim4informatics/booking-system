@@ -17,13 +17,8 @@ export class AdminAuthController {
 
     @Post("login")
     @HttpCode(HttpStatus.OK)
-<<<<<<< HEAD
-    loginUser(@Body() loginUserDto: LoginDto, @Res({ passthrough: true }) res: Response) {
-        return this.authService.loginUser(loginUserDto, 'admin', res);
-=======
     loginUser(@Body() loginUserDto: LoginDto, @Res({passthrough:true}) res: Response) {
         return this.authService.loginUser(loginUserDto, res);
->>>>>>> auth
     }
 
     @Post("register")
@@ -33,13 +28,8 @@ export class AdminAuthController {
 
     @Post("forgot")
     @HttpCode(HttpStatus.OK)
-<<<<<<< HEAD
-    sendForgotOtp(@Body() forgotPasswordDto: ForgotPasswordDto, @Res({ passthrough: true }) res: Response) {
-        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin', res);
-=======
     sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
         return this.authService.sendForgotPasswordOtp(forgotPasswordDto,res);
->>>>>>> auth
     }
 
     @Get("forgot")
@@ -49,52 +39,9 @@ export class AdminAuthController {
 
     @Patch("forgot")
     resetPassword(@Body() updateForgotPasswordOtpDto: UpdateForgotPasswordOtpDto, @Req() req: Request) {
-        return this.authService.updatePassword(updateForgotPasswordOtpDto, req, 'admin');
+        return this.authService.updatePassword(updateForgotPasswordOtpDto, req);
     }
 
 
 
-<<<<<<< HEAD
-}
-
-
-@Controller("auth/client")
-export class ClientAuthController {
-
-    constructor(
-        private readonly authService: AuthService
-    ) { }
-
-    @Post('login')
-    @HttpCode(HttpStatus.OK)
-    loginUser(@Body() loginUserDto: LoginDto, @Res({ passthrough: true }) res: Response) {
-        return this.authService.loginUser(loginUserDto, 'client', res);
-    }
-
-    @Post('register')
-
-    registerUser(@Body() registerDto: RegisterDto) {
-        return this.authService.registerUser(registerDto, 'client');
-    }
-
-    //? send verification code to user email
-    @Post("forgot")
-    @HttpCode(HttpStatus.OK)
-    sendForgotOtp(@Body() forgotPasswordDto: ForgotPasswordDto, @Res({ passthrough: true }) res: Response) {
-        return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'client', res);
-    }
-
-    //? cehck the frogot request validity
-    @Get("forgot")
-    verifyForgotPassword(@Req() req: Request) {
-        return this.authService.checkForgotPasswordOtp(req);
-    }
-
-    //? change password for valid forgot request
-    @Patch("forgot")
-    resetPassword(@Body() updateForgotPasswordOtpDto: UpdateForgotPasswordOtpDto, @Req() req: Request) {
-        return this.authService.updatePassword(updateForgotPasswordOtpDto, req, 'client')
-    }
-=======
->>>>>>> auth
 }
