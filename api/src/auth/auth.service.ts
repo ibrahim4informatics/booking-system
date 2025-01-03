@@ -200,7 +200,7 @@ export default class AuthService {
     }
     async generateToken(payload: {}, secret: string, options?: JwtSignOptions): Promise<string | null> {
         try {
-            const token = await this.jwtService.signAsync(payload, { secret });
+            const token = await this.jwtService.signAsync(payload, { secret, ...options });
             return token;
         }
 
@@ -224,41 +224,42 @@ export default class AuthService {
 
         }
     }
-    async loginUser(loginUserDto: LoginDto, userType: 'client' | 'admin', res: Response) {
+    async loginUser(loginUserDto: LoginDto, res: Response) {
         const { email, password } = loginUserDto;
 
-        let user: User | Admin;
-        let role: string;
 
-        if (userType === 'admin') {
-            user = await this.prismaService.admin.findUnique({ where: { email } });
-            role = 'admin';
-        } else {
-            user = await this.prismaService.user.findUnique({ where: { email } });
-            role = 'client';
+        const user: User | null = await this.prismaService.user.findUnique({ where: { email } });
+        //?: check user existence
+        if (!user) throw new UnauthorizedException("invalid email or password");
+
+        //?: check password validity
+        const isCorrectPassword: boolean = await this.argonService.compare(user?.password, password);
+        if (!isCorrectPassword) throw new UnauthorizedException("invalid email or password");
+
+        //?: generate tokens for admin users
+        let accessToken: string, refreshToken: string;
+        const payload: Record<string, string> = {
+            id: user.id,
+            role: user.role
         }
 
-        if (!user) {
-            throw new UnauthorizedException("invalid email or password");
+        if (user.role === 'admin') {
+            accessToken = await this.generateToken(payload, process.env.AATS, {expiresIn:'5m'} );
+            refreshToken = await this.generateToken(payload,process.env.ARTS, {expiresIn:"3d"});
         }
 
-        if (!(this.argonService.compare(user.password, password))) {
-            throw new UnauthorizedException("invalid email or password");
+        //?: generate tokens for client users
+        else {
+            accessToken = await this.generateToken(payload, process.env.CATS, {expiresIn:'15m'} );
+            refreshToken = await this.generateToken(payload,process.env.CRTS, {expiresIn:"7d"});
         }
 
-        const accessToken = await this.generateToken({ uid: user.id, role }, userType === 'admin' ? process.env.AATS : process.env.CATS, { expiresIn: "15m" });
-        const refreshToken = await this.generateToken({ uid: user.id, role }, userType === 'admin' ? process.env.ARTS : process.env.CRTS, { expiresIn: "7d" });
-
-        if (!accessToken || !refreshToken) {
-            throw new InternalServerErrorException("Error while trying to login user");
-        }
-
-        res.cookie('access', accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-        res.cookie('refresh', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-
+        //?: assign them to http only cookies
+        res.cookie("access", accessToken, {httpOnly:true, secure:process.env.mode === "production", sameSite:'strict'});
+        res.cookie("refresh", refreshToken, {httpOnly:true, secure:process.env.mode === "production", sameSite:'strict'});
         return {
             msg: "user login success"
-        };
+        }
     }
     async registerUser(registerUserDto: RegisterDto, userType: 'admin' | 'client') {
 
