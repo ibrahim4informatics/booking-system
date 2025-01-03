@@ -6,6 +6,8 @@ import { Box, Heading, Input, Link, Text } from "@chakra-ui/react";
 import { Field } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+
 
 type formFields = {
     email: string,
@@ -28,10 +30,11 @@ const schema = y.object({
 const RegisterForm: React.FC = () => {
     const { register, formState: { errors, isSubmitting }, handleSubmit } = useForm<formFields>({ resolver: yupResolver(schema) })
     const submitFnc: SubmitHandler<formFields> = async (data: formFields) => {
-        return new Promise((res, rej) => {
+        return new Promise((res, _rej) => {
             console.log("submitting");
             setTimeout(() => {
-                console.log(data);
+
+                console.log({ ...data, date_of_birth: format(data.date_of_birth, "yyyy-MM-dd") });
                 res(null)
             }, 2000)
         })
