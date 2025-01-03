@@ -4,7 +4,7 @@ import PrismaService from "src/prisma/prisma.service";
 import ArgonService from "src/argon/argon,service";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
 import { Response, Request } from "express";
-import { Admin, User } from "@prisma/client";
+import { User } from "@prisma/client";
 import RegisterDto from "./dto/register.dto";
 import ForgotPasswordDto from "./dto/forgot.dto";
 import NodemailerService from "src/nodemailer/nodemailer.service";
@@ -244,65 +244,50 @@ export default class AuthService {
         }
 
         if (user.role === 'admin') {
-            accessToken = await this.generateToken(payload, process.env.AATS, {expiresIn:'5m'} );
-            refreshToken = await this.generateToken(payload,process.env.ARTS, {expiresIn:"3d"});
+            accessToken = await this.generateToken(payload, process.env.AATS, { expiresIn: '5m' });
+            refreshToken = await this.generateToken(payload, process.env.ARTS, { expiresIn: "3d" });
         }
 
         //?: generate tokens for client users
         else {
-            accessToken = await this.generateToken(payload, process.env.CATS, {expiresIn:'15m'} );
-            refreshToken = await this.generateToken(payload,process.env.CRTS, {expiresIn:"7d"});
+            accessToken = await this.generateToken(payload, process.env.CATS, { expiresIn: '15m' });
+            refreshToken = await this.generateToken(payload, process.env.CRTS, { expiresIn: "7d" });
         }
 
         //?: assign them to http only cookies
-        res.cookie("access", accessToken, {httpOnly:true, secure:process.env.mode === "production", sameSite:'strict'});
-        res.cookie("refresh", refreshToken, {httpOnly:true, secure:process.env.mode === "production", sameSite:'strict'});
+        res.cookie("access", accessToken, { httpOnly: true, secure: process.env.MODE === "production", sameSite: 'strict' });
+        res.cookie("refresh", refreshToken, { httpOnly: true, secure: process.env.MODE === "production", sameSite: 'strict' });
         return {
             msg: "user login success"
         }
     }
-    async registerUser(registerUserDto: RegisterDto, userType: 'admin' | 'client') {
+    async registerUser(registerUserDto: RegisterDto) {
 
-        const { email, password, family_name, last_name, age, phone_number } = registerUserDto
+        const { email, password, family_name, last_name, age, phone_number, role } = registerUserDto
 
-        const admin = await this.prismaService.admin.findUnique({ where: { email } });
-        const client = await this.prismaService.user.findUnique({ where: { email } });
+        const user = await this.prismaService.user.findUnique({ where: { email } });
 
-        if (client || admin) throw new BadRequestException("the email is used by another account");
-        if (userType === 'admin') {
-            try {
-                await this.prismaService.admin.create({
-                    data: {
-                        email, family_name, last_name, age, phone_number,
-                        password: await this.argonService.hashValue(password),
-                        code: this.userCodeGenerator(phone_number, email)
-                    }
-                });
-            }
-            catch (err) {
-                console.log(`error is ${new Error(err)}`);
-                throw new InternalServerErrorException("Can not register user now!")
-            }
+        if (user) throw new BadRequestException("the email is used by another account");
+
+
+
+
+        try {
+            await this.prismaService.user.create({
+                data: {
+                    email, family_name, last_name, age, phone_number,
+                    password: await this.argonService.hashValue(password),
+                    code: this.userCodeGenerator(phone_number, email),
+                    role
+                }
+            });
+        }
+        catch (err) {
+            console.log(`error is ${new Error(err)}`);
+            throw new InternalServerErrorException("Can not register user now!")
         }
 
 
-        else {
-
-            try {
-                await this.prismaService.user.create({
-                    data: {
-                        email, family_name, last_name, age, phone_number,
-                        password: await this.argonService.hashValue(password),
-                        code: this.userCodeGenerator(phone_number, email)
-                    }
-                });
-            }
-            catch (err) {
-                console.log(`error is ${new Error(err)}`);
-                throw new InternalServerErrorException("Can not register user now!")
-            }
-
-        }
 
         return {
             msg: "user creation success"
@@ -312,28 +297,17 @@ export default class AuthService {
 
     //todo: forgot password
     async sendForgotPasswordOtp(
-        forgotPasswordDto: ForgotPasswordDto, userType: 'admin' | 'client', res: Response
+        forgotPasswordDto: ForgotPasswordDto, res: Response
     ) {
 
-        let user: User | Admin | null = null;
         const { email } = forgotPasswordDto;
-        console.log(userType)
+        const user: User | null = await this.prismaService.user.findUnique({ where: { email } });
 
-        if (userType === 'admin') {
-            user = await this.prismaService.admin.findUnique({ where: { email } });
-        }
-        else {
-            user = await this.prismaService.user.findUnique({ where: { email } });
-        }
 
         if (!user) throw new BadRequestException("email is not valid");
         const otp: number = Math.ceil(Math.random() * 1000000);
-        if (userType === 'admin') {
-            await this.prismaService.admin.update({ where: { email }, data: { otp } });
-        }
-        else {
-            await this.prismaService.user.update({ where: { email }, data: { otp } });
-        }
+        await this.prismaService.user.update({ where: { email }, data: { otp } });
+
 
         const emailSent: boolean = await this.nodemailer.sendMail({
             from: `IBDEV Booking System<${process.env.USER}>`,
@@ -361,7 +335,7 @@ export default class AuthService {
 
     }
 
-    async updatePassword(updatePasswordDto: UpdateForgotPasswordOtpDto, req: Request, userType: 'admin' | 'client') {
+    async updatePassword(updatePasswordDto: UpdateForgotPasswordOtpDto, req: Request,) {
         const { forgot } = req.cookies;
         const { otp, email, newPassword } = updatePasswordDto
 
@@ -369,33 +343,14 @@ export default class AuthService {
         const payload = await this.verifyToken(forgot, process.env.FPOTS);
         if (!payload) throw new ForbiddenException("invalid request for resetting password");
         if (payload.email !== email) {
-            if (userType === 'admin') {
-                await this.prismaService.admin.update({ where: { email }, data: { otp: null } });
-            }
-            else {
-                await this.prismaService.user.update({ where: { email }, data: { otp: null } });
-            }
+            await this.prismaService.user.update({ where: { email }, data: { otp: null } });
             throw new ForbiddenException("reset request missmatch send another verification code!");
         }
-
-        let user: User | Admin | null;
-        if (userType === 'admin') {
-            user = await this.prismaService.admin.findUnique({ where: { email } });
-        }
-        else {
-            user = await this.prismaService.user.findUnique({ where: { email } });
-        }
-
+        const user = await this.prismaService.user.findUnique({ where: { email } });
         if (!user) throw new UnauthorizedException("invalid informations");
+        if (user.otp !== otp) throw new ForbiddenException("incorrect or expired verification code");
+        await this.prismaService.user.update({ where: { email }, data: { otp: null, password: await this.argonService.hashValue(newPassword) } })
 
-        if (user.otp !== otp) throw new ForbiddenException("incorrect or expired erification code");
-
-        if (userType === 'admin') {
-            await this.prismaService.admin.update({ where: { email }, data: { otp: null, password: await this.argonService.hashValue(newPassword) } })
-        }
-        else {
-            await this.prismaService.user.update({ where: { email }, data: { otp: null, password: await this.argonService.hashValue(newPassword) } })
-        }
         return {
             msg: "password reset success!"
         }
