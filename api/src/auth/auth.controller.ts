@@ -6,7 +6,7 @@ import RegisterDto from "./dto/register.dto";
 import ForgotPasswordDto from "./dto/forgot.dto";
 import UpdateForgotPasswordOtpDto from "./dto/updatePasswordOtp.dto";
 
-@Controller("auth/admin")
+@Controller("auth")
 export class AdminAuthController {
 
     constructor(
@@ -17,19 +17,29 @@ export class AdminAuthController {
 
     @Post("login")
     @HttpCode(HttpStatus.OK)
+<<<<<<< HEAD
     loginUser(@Body() loginUserDto: LoginDto, @Res({ passthrough: true }) res: Response) {
         return this.authService.loginUser(loginUserDto, 'admin', res);
+=======
+    loginUser(@Body() loginUserDto: LoginDto, @Res({passthrough:true}) res: Response) {
+        return this.authService.loginUser(loginUserDto, res);
+>>>>>>> auth
     }
 
     @Post("register")
     registerClient(@Body() registerDto: RegisterDto) {
-        return this.authService.registerUser(registerDto, 'admin');
+        return this.authService.registerUser(registerDto);
     }
 
     @Post("forgot")
     @HttpCode(HttpStatus.OK)
+<<<<<<< HEAD
     sendForgotOtp(@Body() forgotPasswordDto: ForgotPasswordDto, @Res({ passthrough: true }) res: Response) {
         return this.authService.sendForgotPasswordOtp(forgotPasswordDto, 'admin', res);
+=======
+    sendForgotOtp(@Body() forgotPasswordDto:ForgotPasswordDto, @Res({passthrough:true}) res:Response){
+        return this.authService.sendForgotPasswordOtp(forgotPasswordDto,res);
+>>>>>>> auth
     }
 
     @Get("forgot")
@@ -44,6 +54,7 @@ export class AdminAuthController {
 
 
 
+<<<<<<< HEAD
 }
 
 
@@ -84,4 +95,6 @@ export class ClientAuthController {
     resetPassword(@Body() updateForgotPasswordOtpDto: UpdateForgotPasswordOtpDto, @Req() req: Request) {
         return this.authService.updatePassword(updateForgotPasswordOtpDto, req, 'client')
     }
+=======
+>>>>>>> auth
 }
