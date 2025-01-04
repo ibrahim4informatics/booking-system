@@ -248,15 +248,10 @@ export default class AuthService {
             refreshToken = await this.generateToken(payload, process.env.ARTS, { expiresIn: "3d" });
         }
 
-<<<<<<< HEAD
-        if (!(await this.argonService.compare(user.password, password))) {
-            throw new UnauthorizedException("invalid email or password");
-=======
         //?: generate tokens for client users
         else {
             accessToken = await this.generateToken(payload, process.env.CATS, { expiresIn: '15m' });
             refreshToken = await this.generateToken(payload, process.env.CRTS, { expiresIn: "7d" });
->>>>>>> auth
         }
 
         //?: assign them to http only cookies
@@ -268,11 +263,12 @@ export default class AuthService {
     }
     async registerUser(registerUserDto: RegisterDto) {
 
-        const { email, password, family_name, last_name, age, phone_number, role } = registerUserDto
+        const { email, password, family_name, last_name, date_of_birth, phone_number, role } = registerUserDto
 
-        const user = await this.prismaService.user.findUnique({ where: { email } });
-
-        if (user) throw new BadRequestException("the email is used by another account");
+        const userEmailExist = await this.prismaService.user.findUnique({ where: { email } });
+        const userPhoneExist = await this.prismaService.user.findUnique({ where: { phone_number } });
+        if (userEmailExist) throw new BadRequestException("the email is used by another account");
+        if (userPhoneExist) throw new BadRequestException("the phone is used by another account");
 
 
 
@@ -280,7 +276,7 @@ export default class AuthService {
         try {
             await this.prismaService.user.create({
                 data: {
-                    email, family_name, last_name, age, phone_number,
+                    email, family_name, last_name, date_of_birth: new Date(date_of_birth), phone_number,
                     password: await this.argonService.hashValue(password),
                     code: this.userCodeGenerator(phone_number, email),
                     role
@@ -348,31 +344,10 @@ export default class AuthService {
         const payload = await this.verifyToken(forgot, process.env.FPOTS);
         if (!payload) throw new ForbiddenException("invalid request for resetting password");
         if (payload.email !== email) {
-<<<<<<< HEAD
-            if (userType === 'admin') {
-                await this.prismaService.admin.update({ where: { email: payload.email }, data: { otp: null } });
-            }
-            else {
-                await this.prismaService.user.update({ where: { email:payload.email }, data: { otp: null } });
-            }
-            throw new ForbiddenException("reset request missmatch send another verification code!");
-        }
-
-        let user: User | Admin | null;
-        if (userType === 'admin') {
-            user = await this.prismaService.admin.findUnique({ where: { email } });
-        }
-        else {
-            user = await this.prismaService.user.findUnique({ where: { email } });
-        }
-
-
-=======
             await this.prismaService.user.update({ where: { email }, data: { otp: null } });
             throw new ForbiddenException("reset request missmatch send another verification code!");
         }
         const user = await this.prismaService.user.findUnique({ where: { email } });
->>>>>>> auth
         if (!user) throw new UnauthorizedException("invalid informations");
         if (user.otp !== otp) throw new ForbiddenException("incorrect or expired verification code");
         await this.prismaService.user.update({ where: { email }, data: { otp: null, password: await this.argonService.hashValue(newPassword) } })

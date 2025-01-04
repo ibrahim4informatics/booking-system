@@ -4,32 +4,16 @@ CREATE TABLE `User` (
     `code` VARCHAR(191) NOT NULL,
     `family_name` VARCHAR(35) NOT NULL,
     `last_name` VARCHAR(35) NOT NULL,
-    `age` INTEGER NOT NULL,
+    `date_of_birth` DATE NOT NULL,
     `phone_number` VARCHAR(12) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
+    `role` ENUM('admin', 'client') NOT NULL DEFAULT 'client',
     `password` VARCHAR(191) NOT NULL,
     `otp` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `User_phone_number_key`(`phone_number`),
     UNIQUE INDEX `User_email_key`(`email`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Admin` (
-    `id` VARCHAR(191) NOT NULL,
-    `code` VARCHAR(191) NOT NULL,
-    `family_name` VARCHAR(35) NOT NULL,
-    `last_name` VARCHAR(35) NOT NULL,
-    `age` INTEGER NOT NULL,
-    `phone_number` VARCHAR(12) NOT NULL,
-    `email` VARCHAR(191) NOT NULL,
-    `password` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    UNIQUE INDEX `Admin_phone_number_key`(`phone_number`),
-    UNIQUE INDEX `Admin_email_key`(`email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

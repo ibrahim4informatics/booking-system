@@ -7,6 +7,10 @@ import { Field } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { GoAlert } from "react-icons/go";
+import registerFnc from "@/services/auth/register";
+import MessageAlert from "@/components/custom/MessageAlert";
+import { useNavigate } from "react-router-dom";
 
 
 type formFields = {
@@ -28,22 +32,43 @@ const schema = y.object({
     date_of_birth: y.date().required("this field is required")
 })
 const RegisterForm: React.FC = () => {
-    const { register, formState: { errors, isSubmitting }, handleSubmit } = useForm<formFields>({ resolver: yupResolver(schema) })
+    const navigate = useNavigate();
+    const { register, formState: { errors, isSubmitting }, handleSubmit, setError } = useForm<formFields>({ resolver: yupResolver(schema) })
     const submitFnc: SubmitHandler<formFields> = async (data: formFields) => {
-        return new Promise((res, _rej) => {
-            console.log("submitting");
-            setTimeout(() => {
+        const registerPromise = registerFnc(data);
+        const response = await registerPromise;
+        if (response.status === 400) {
+            const errorMessage = response.response.data.message;
 
-                console.log({ ...data, date_of_birth: format(data.date_of_birth, "yyyy-MM-dd") });
-                res(null)
-            }, 2000)
-        })
+            switch (errorMessage) {
+                case "the email is used by another account":
+                    setError('email', { message: errorMessage })
+                    break;
+                case "the phone is used by another account":
+                    console.log('first')
+                    setError('phone_number', { message: errorMessage });
+                    break;
+                default:
+                    setError("root", { message: "please check all your fields there is something wrong!" })
+            }
+        }
+
+        else if (response.status === 500) {
+            setError('root', { message: "something went wrong please try again later!" });
+        }
+
+        else if (response.status === 201) navigate("/login")
+        return registerPromise;
     }
 
     return (
         <Box as={"form"} w={"100%"} maxW={"450px"} onSubmit={handleSubmit(submitFnc)} mt={4} p={4}>
-            <Heading>Hello There!</Heading>
-            <Text color={"GrayText"} fontSize={14}>welcome to the best booking plateform,create an acount and start browsing</Text>
+            <Heading fontSize={22}>Hello There!</Heading>
+            {
+                (errors.root?.message) ? (<MessageAlert icon={<GoAlert color="#EF4444" size={20} />} message={errors.root.message} colorPallet="red" />
+                ) : (<Text color={"GrayText"} fontSize={14}>welcome to the best booking plateform,create an acount and start browsing</Text>
+                )
+            }
 
             <Box w={'full'} display={'flex'} alignItems={'center'} gap={2}>
                 <Field errorText={errors.family_name?.message} my={4} label="Family Name:" required invalid={errors.family_name?.message ? true : false} >
