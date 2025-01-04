@@ -6,7 +6,6 @@ import { Box, Heading, Input, Link, Text } from "@chakra-ui/react";
 import { Field } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
 import { GoAlert } from "react-icons/go";
 import registerFnc from "@/services/auth/register";
 import MessageAlert from "@/components/custom/MessageAlert";
@@ -45,7 +44,6 @@ const RegisterForm: React.FC = () => {
                     setError('email', { message: errorMessage })
                     break;
                 case "the phone is used by another account":
-                    console.log('first')
                     setError('phone_number', { message: errorMessage });
                     break;
                 default:

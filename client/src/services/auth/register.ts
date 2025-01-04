@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import fetcher from "../config/axios"
 export default async (data: Record<string, unknown>) => {
     try {
