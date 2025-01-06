@@ -1,3 +1,4 @@
+import MessageAlert from "@/components/custom/MessageAlert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -5,7 +6,10 @@ import { Box, Heading, Input, Link, Text } from "@chakra-ui/react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import React from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { GoAlert } from "react-icons/go";
 import * as y from 'yup';
+import loginUser from "@/services/auth/login";
+import { useNavigate } from "react-router-dom";
 
 type formFields = {
     email: string,
@@ -19,25 +23,26 @@ const schema = y.object({
 })
 
 const LoginForm: React.FC = () => {
-    const { register, formState: { errors, isSubmitting, isSubmitted }, handleSubmit, } = useForm<formFields>({ resolver: yupResolver(schema) })
+    const { register, formState: { errors, isSubmitting }, handleSubmit, setError } = useForm<formFields>({ resolver: yupResolver(schema) })
+    const nav = useNavigate();
     const submitFnc: SubmitHandler<formFields> = async (data) => {
+        const loginPromise = loginUser(data);
+        const res = await loginPromise;
 
-
-        console.log("Submitting data:", data);
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log("Data submitted successfully!");
-                resolve(null);
-            }, 2000); // Simulates a 2-second delay
-        });
-
-
+        if (res.status === 200) nav("/");
+        else if (res.status === 400) setError('root', { message: "invalid email or password" });
+        else {
+            console.log(res);
+            setError('root', { message: "something went wrong try again later" });
+        }
+        return loginPromise;
     }
     return (
         <Box as={'form'} w={"100%"} maxW={'450px'} borderRadius={4} p={8} onSubmit={handleSubmit(submitFnc)}>
             <Heading color={"black"} fontWeight={'bold'}>Welcome Back</Heading>
             <Text fontSize={"13px"} color={'GrayText'} ml={1}>Login to your account!</Text>
-
+            {errors.root?.message && <MessageAlert colorPallet="red" icon={<GoAlert color="#EF4444" />} message={errors.root?.message} />
+            }
             <Field invalid={errors.email?.message ? true : false} errorText={errors.email?.message} label="Email" color={"blue"} my={4}>
                 <Input color={'black'} variant={'flushed'} colorPalette={"blue"} size={'lg'} placeholder="johnsmith@gmail.com" {...register("email")} />
             </Field>

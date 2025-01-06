@@ -356,4 +356,9 @@ export default class AuthService {
             msg: "password reset success!"
         }
     }
+
+
+    checkUserAuthenticated(){
+        return {msg:"user is authenticated"};
+    }
 }
