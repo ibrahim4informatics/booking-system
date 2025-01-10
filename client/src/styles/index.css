@@ -1,0 +1,62 @@
+main {
+    width: 100%;
+    height: calc(100vh - 60px);
+
+}
+
+.link {
+    position: relative;
+}
+
+.link::after {
+    content: '';
+    width: 0;
+    height: 2px;
+    background: #000;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+
+.link:hover::after {
+    animation: fil-animation 300ms;
+    width: 100%;
+}
+
+.slide-to-left {
+    animation: slide-to-left-an 300ms;
+}
+
+.slide-to-right {
+    animation: slide-to-left-an 300ms reverse;
+}
+
+.hidden-right {
+    right: 100%;
+}
+
+.show-right {
+    right: 0;
+}
+
+@keyframes fil-animation {
+    0% {
+        width: 0;
+    }
+
+    100% {
+        width: 100%;
+    }
+
+}
+
+@keyframes slide-to-left-an {
+    0% {
+        right: -100%;
+    }
+
+    100% {
+        right: 0;
+    }
+}
